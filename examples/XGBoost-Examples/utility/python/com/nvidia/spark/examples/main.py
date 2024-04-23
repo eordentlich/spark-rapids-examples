@@ -19,4 +19,5 @@ from importlib import import_module
 
 def main():
     args, xgboost_args = parse_arguments()
-    getattr(import_module(args.mainClass), 'main')(args, xgboost_args)
+    main_module = import_module(args.mainClass)
+    getattr(main_module, 'main')(args, xgboost_args)

@@ -34,6 +34,7 @@ _examples = [
     'com.nvidia.spark.examples.agaricus.main',
     'com.nvidia.spark.examples.mortgage.main',
     'com.nvidia.spark.examples.mortgage.etl_main',
+    'com.nvidia.spark.examples.mortgage.lr_main',
     'com.nvidia.spark.examples.mortgage.cross_validator_main',
     'com.nvidia.spark.examples.taxi.main',
     'com.nvidia.spark.examples.taxi.etl_main',
@@ -66,26 +67,26 @@ def _attach_derived_args(args):
     args.splitRatios = [args.trainRatio, args.trainEvalRatio, args.evalRatio]
 
 
-def _inspect_xgb_parameters() -> typing.Dict[str, type]:
-    """inspect XGBModel parameters from __init__"""
-    from xgboost import XGBModel
+def _inspect_ml_parameters() -> typing.Dict[str, type]:
+    """inspect LogisticRegressionModel parameters from __init__"""
+    from pyspark.ml.classification import LogisticRegression
     from typing import get_type_hints, get_origin
-    xgb_parameters = {}
-    xgb_model_sig = get_type_hints(XGBModel.__init__)
-    for k, v in xgb_model_sig.items():
+    lr_parameters = {}
+    lr_model_sig = get_type_hints(LogisticRegression.__init__)
+    for k, v in lr_model_sig.items():
         if k != "kwargs" and k != "return":
             if get_origin(v) == typing.Union:
-                xgb_parameters[k] = v.__args__[0]
+                lr_parameters[k] = v.__args__[0]
             else:
-                xgb_parameters[k] = v
+                lr_parameters[k] = v
 
-    # some extra parameters used by xgboost pyspark
-    xgb_parameters['objective'] = str
-    xgb_parameters['force_repartition'] = _to_bool
-    xgb_parameters['use_gpu'] = _to_bool
-    xgb_parameters['num_workers'] = int
-    xgb_parameters['enable_sparse_data_optim'] = _to_bool
-    return xgb_parameters
+    # some extra parameters used by logistic regression pyspark
+    lr_parameters['force_repartition'] = _to_bool
+    lr_parameters['use_gpu'] = _to_bool
+    lr_parameters['num_workers'] = int
+    lr_parameters['enable_sparse_data_optim'] = _to_bool
+    lr_parameters['standardize'] = _to_bool
+    return lr_parameters
 
 
 def parse_arguments():
@@ -105,18 +106,22 @@ def parse_arguments():
     parser.add_argument('--numRows', type=int, default=5)
     parser.add_argument('--showFeatures', type=_to_bool, default=True)
 
-    xgboost_all_args = _inspect_xgb_parameters()
-    for arg, tp in xgboost_all_args.items():
-        parser.add_argument('--' + arg, type=tp)
+    ml_all_args = _inspect_ml_parameters()
+    for arg, tp in ml_all_args.items():
+        if tp in [int, float]:
+            parser.add_argument('--' + arg, type=tp, action='append')
+        else:
+            parser.add_argument('--' + arg, type=tp)
 
     parsed_all = parser.parse_args()
     _validate_args(parsed_all)
     _attach_derived_args(parsed_all)
 
-    parsed_xgboost = {
+    parsed_ml = {
         k: v
         for k, v in vars(parsed_all).items()
-        if k in xgboost_all_args and v is not None
+        if k in ml_all_args and v is not None
     }
+    parsed_ml = {}
 
-    return parsed_all, parsed_xgboost
+    return parsed_all, parsed_ml

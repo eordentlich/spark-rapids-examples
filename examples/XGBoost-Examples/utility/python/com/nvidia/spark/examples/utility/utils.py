@@ -18,7 +18,7 @@ import typing
 from pyspark.ml.evaluation import *
 from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, array
 from pyspark.sql.types import FloatType
 from com.nvidia.spark.examples.taxi.pre_process import pre_process
 from time import time

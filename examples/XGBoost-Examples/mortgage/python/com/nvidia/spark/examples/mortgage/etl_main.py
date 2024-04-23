@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from .etl import etl, extract_paths
+from .etl_nb import etl, extract_paths
 from com.nvidia.spark.examples.utility.utils import *
 from pyspark.sql import SparkSession
 
